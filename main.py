@@ -3,6 +3,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 
 from user_service import register_user, login_user
 from document_service import document_save, search_documents, upload_documents, extract_text
+from text_processor import clean_text, split_text
 
 app = FastAPI(
     title="LawBench",
@@ -46,7 +47,6 @@ def pipeline_load():
     save_stage("loaded", documents)
     return {"count": len(documents), "documents": documents}
 
-from text_processor import clean_text, split_text
 @app.post("/pipeline/clean")
 def pipeline_clean():
     rows = load_stage("loaded")
@@ -69,7 +69,16 @@ def pipeline_clean():
 
 @app.post("/pipeline/chunk")
 def pipeline_chunk():
-    pass
+    rows = load_stage("cleaned")
+    all_chunks = []
+    for row in rows:
+        document_id = row[0]
+        for chunk_index, text in enumerate(split_text(row[2])):
+            data = [document_id, chunk_index, text]
+            all_chunks.append(data)
+    save_stage("chunk", all_chunks)
+    return {"count": len(all_chunks), "documents": all_chunks}
+
 
 @app.post("/pipeline/embed")
 def pipeline_embed():

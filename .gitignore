@@ -5,6 +5,7 @@ docker/volumes
 # IDE settings
 .idea/
 
+HANDOFF.md
 # Python cache
 __pycache__/
 *.py[cod]
