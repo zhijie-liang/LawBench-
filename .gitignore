@@ -1,0 +1,10 @@
+# Project data and deployment files
+data/
+docker/volumes
+
+# IDE settings
+.idea/
+
+# Python cache
+__pycache__/
+*.py[cod]
