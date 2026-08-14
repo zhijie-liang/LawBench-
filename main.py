@@ -38,7 +38,46 @@ def upload(file: UploadFile = File(...)):
     upload_documents(file.filename, content, file.content_type)
     return {"filename": file.filename}
 
+from document_service import load_documents
+from pipeline_store import save_stage, load_stage
+@app.get("/pipeline/load")
+def pipeline_load():
+    documents = load_documents()
+    save_stage("loaded", documents)
+    return {"count": len(documents), "documents": documents}
 
+from text_processor import clean_text, split_text
+@app.post("/pipeline/clean")
+def pipeline_clean():
+    rows = load_stage("loaded")
+    cleaned_rows = []
+
+    for row in rows:
+        cleaned_row = row.copy()
+        cleaned_row[2] = clean_text(row[2] or "")
+        cleaned_rows.append(cleaned_row)
+
+    save_stage("cleaned", cleaned_rows)
+
+    return {
+        "count": len(cleaned_rows),
+        "documents": cleaned_rows
+    }
+
+
+
+
+@app.post("/pipeline/chunk")
+def pipeline_chunk():
+    pass
+
+@app.post("/pipeline/embed")
+def pipeline_embed():
+    pass
+
+@app.post("/pipeline/index")
+def pipeline_index():
+    pass
 
 # if __name__ == "__main__":
 #     uvicorn.run("main:app", host="127.0.0.1",
