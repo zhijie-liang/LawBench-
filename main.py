@@ -1,6 +1,10 @@
+import os
+
+import dashscope
 import uvicorn
 from fastapi import FastAPI, UploadFile, File, HTTPException
 
+from text_processor import embed_chunks
 from user_service import register_user, login_user
 from document_service import document_save, search_documents, upload_documents, extract_text
 from text_processor import clean_text, split_text
@@ -76,17 +80,38 @@ def pipeline_chunk():
         for chunk_index, text in enumerate(split_text(row[2])):
             data = [document_id, chunk_index, text]
             all_chunks.append(data)
-    save_stage("chunk", all_chunks)
+    save_stage("chunked", all_chunks)
     return {"count": len(all_chunks), "documents": all_chunks}
 
 
 @app.post("/pipeline/embed")
 def pipeline_embed():
-    pass
+    return embed_chunks()
 
 @app.post("/pipeline/index")
 def pipeline_index():
     pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # if __name__ == "__main__":
 #     uvicorn.run("main:app", host="127.0.0.1",
