@@ -1,0 +1,15 @@
+# Project data and deployment files
+data/
+docker/volumes
+
+# IDE settings
+.idea/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
