@@ -1,16 +1,17 @@
+import os
+from dotenv import load_dotenv
+from typing import TypedDict
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from pymilvus import MilvusClient
 import pymysql
 from pymysql.err import IntegrityError
 from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings.dashscope import DashScopeEmbeddings
-import os
-from dotenv import load_dotenv
-from pymilvus import MilvusClient
-from langchain_community.chat_models import ChatTongyi
 from langchain_core.prompts import ChatPromptTemplate
-# from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
+from langchain_community.embeddings.dashscope import DashScopeEmbeddings
+from langchain_community.chat_models import ChatTongyi
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langgraph.graph import StateGraph, START, END
 
 app = FastAPI(title="LawBench", version="2.0")
 
@@ -193,3 +194,7 @@ def chat(question: str):
         "context": context,
         "question": question
     })
+
+# =========================================================
+# 5. LangGraph接入
+# =========================================================
