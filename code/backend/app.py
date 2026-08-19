@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-from typing import TypedDict
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from pymilvus import MilvusClient
 import pymysql
@@ -11,8 +10,15 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_community.embeddings.dashscope import DashScopeEmbeddings
 from langchain_community.chat_models import ChatTongyi
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langgraph.graph import StateGraph, START, END
+from workflow.rag_graph import run_rag_graph
+from pydantic import BaseModel, Field
 
+
+class ChatResponse(BaseModel):
+    answer: str = ""
+    contexts: list[str] = Field(default_factory=list)
+    trace: list[str] = Field(default_factory=list)
+    stage: str = ""
 app = FastAPI(title="LawBench", version="2.0")
 
 load_dotenv()
@@ -198,3 +204,13 @@ def chat(question: str):
 # =========================================================
 # 5. LangGraph接入
 # =========================================================
+@app.get("/rag/chat", response_model=ChatResponse)
+def langgraph(question: str):
+    result = run_rag_graph(question)
+    return result
+    # return ChatResponse(
+    #     answer=result.get("answer", ""),
+    #     contexts=result.get("contexts", []),
+    #     trace=result.get("trace", []),
+    #     stage=result.get("stage", "")
+    # )
