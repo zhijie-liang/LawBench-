@@ -11,19 +11,22 @@ from typing import Literal
 
 class State(TypedDict, total=False):
     question: str # 用户输入的问题
+    search_query: str # llm改写问题
     contexts: list[str] # 检索到的知识库内容（RAG上下文）
     is_relevant: bool # 判断检索结果是否相关
     retry_count: int # 当前重试次数
     answer: str # 最终生成的回答
-    # 当前流程阶段[检索\评估\生成\拒绝\结束]
-    stage: Literal["retrieve", "grade", "generate", "refuse", "finish"]
+    # 当前流程阶段[检索\评估\重写\生成\拒绝\结束]
+    stage: Literal[
+        "retrieve", "grade", "rewrite", "generate", "refuse", "finish"
+    ]
 
 def retrieve_node(state: State) -> dict:
-    question = state['question']
+    query_text = state.get("search_query", state["question"])
     embeddings = DashScopeEmbeddings(
         model='text-embedding-v3'
     )
-    query_vector = embeddings.embed_query(question)
+    query_vector = embeddings.embed_query(query_text)
     client = MilvusClient(uri="http://localhost:19530")
     results = client.search(
         collection_name="document_chunks_v1",
@@ -37,7 +40,7 @@ def retrieve_node(state: State) -> dict:
         for hit in results[0]
     ]
     return {
-        "question": question,
+        "question": state["question"],
         "contexts": contexts,
         "stage": "retrieve",
     }
@@ -106,7 +109,33 @@ def refuse_node(state: State) -> dict:
 def route_after_grade(state: State):
     if state.get("is_relevant", False):
         return "answer"
+
+    if state.get("retry_count", 0) < 1:
+        return "rewrite"
+
     return "refuse"
+
+def rewrite_query_node(state: State) -> dict:
+    prompt = ChatPromptTemplate.from_template("""
+请改写用户问题，使其更适合在法律知识库中检索。
+只返回改写后的问题，不要解释。
+
+原问题：
+{question}
+""")
+
+    llm = ChatTongyi(model="qwen3.7-max", temperature=0)
+    chain = prompt | llm | StrOutputParser()
+
+    new_query = chain.invoke({
+        "question": state["question"]
+    })
+
+    return {
+        "search_query": new_query.strip(),
+        "retry_count": state.get("retry_count", 0) + 1,
+        "stage": "rewrite"
+    }
 
 
 builder = StateGraph(State)
@@ -115,6 +144,7 @@ builder.add_node("retrieve", retrieve_node)
 builder.add_node("grade", grade_node)
 builder.add_node("answer", answer_node)
 builder.add_node("refuse", refuse_node)
+builder.add_node("rewrite", rewrite_query_node)
 
 builder.add_edge(START, "retrieve")
 builder.add_edge("retrieve", "grade")
@@ -124,19 +154,21 @@ builder.add_conditional_edges(
     route_after_grade,
     {
         "answer": "answer",
+        "rewrite": "rewrite",
         "refuse": "refuse"
     }
 )
 
 builder.add_edge("answer", END)
+builder.add_edge("rewrite", "retrieve")
 builder.add_edge("refuse", END)
 
 graph = builder.compile()
 
 result = graph.invoke(
     {
-    "question": "伪造身份证件如何处罚？"
-    # "question": "林黛玉是谁？"
+    # "question": "伪造身份证件如何处罚？"
+    "question": "林黛玉是谁？"
     }
 )
 
