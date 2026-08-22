@@ -7,10 +7,14 @@ from workflow.login import login_user
 from workflow.rag_graph_chat import run_rag_graph
 from pydantic import BaseModel, Field
 
+class ContextResponse(BaseModel):
+    text: str
+    document_id: int | None = None
+    chunk_index: int | None = None
 
 class ChatResponse(BaseModel):
     answer: str = ""
-    contexts: list[str] = Field(default_factory=list)
+    contexts: list[ContextResponse] = Field(default_factory=list)
     trace: list[str] = Field(default_factory=list)
     stage: str = ""
     error: str = ""

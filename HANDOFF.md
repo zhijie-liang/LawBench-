@@ -216,3 +216,71 @@ Milvus 初始化中的已知缩进问题已经修正：无论集合是否刚创�
 7. 将稳定的流程沉淀为 Skill，形成可复用的法律审查能力。
 
 协作规则：一次只完成一个可运行、可解释、可验收的小任务。用户消化概念期间暂停实现；继续时先从第 1 项的运行验证开始，不跳到 Tool、MCP 或多 Agent。
+
+## 2026-08-20 今日交接
+
+### 当前真实状态
+
+- LangGraph 文件已从冲突的 `code/` 目录迁移到 `code/backend/workflow/rag_graph_chat.py`。
+- `app.py` 已通过 `from workflow.rag_graph import run_rag_graph` 调用图流程。
+- 新接口为 `GET /rag/chat`，使用 `ChatResponse` 返回 `answer`、`contexts`、`trace`、`stage`。
+- LangGraph 已实现：检索、相关性判断、问题改写、一次重试、回答、拒答和流程轨迹。
+- 相关问题与无关问题均已完成运行验证；当前 Git 工作区干净，已有安全检查点。
+
+### 今日学习安排
+
+客户新需求：
+
+> 问答服务发生 Milvus、Embedding 或大模型异常时，客户端必须得到清晰的失败阶段和错误提示，不能只看到 500 或程序堆栈。
+
+今天只完成第一个小任务：设计并实现异常节点/异常状态，让 `/rag/chat` 返回统一错误结构。
+
+学习重点：
+
+1. 为什么普通异常会中断 LangGraph；
+2. 节点如何捕获并写入 State；
+3. 如何区分业务拒答和系统失败；
+4. 如何让 API 不泄露堆栈和密钥。
+
+验收：模拟一个节点异常，接口仍返回 JSON，至少包含 `stage`、`error`、`trace`；正常回答和知识库拒答路径不能被破坏。
+
+（该段为 8 月 20 日历史安排；当前已推进到 Tool 学习，以上方 8 月 21 日交接为准。）
+
+## 2026-08-21 今日交接
+
+### 当前真实状态
+
+- LangGraph 主流程当前文件为 `code/backend/workflow/rag_graph_chat.py`。
+- `/rag/chat` 已接入 LangGraph，并返回 `answer`、带元数据的 `contexts`、`trace`、`stage` 和 `error`。
+- 已修正检索结果只返回一条的问题：`retrieve_node` 的成功 `return` 已移到 `for` 循环外。
+- 已新增 `code/backend/services/tools.py`，包含两个 LangChain Tool：
+  - `search_legal_knowledge(query)`：检索法律知识库 Top-3 片段。
+  - `get_document_detail(document_id)`：查询 MySQL 中的完整文档。
+- 两个 Tool 已分别运行验证；模型已能根据问题自主选择对应 Tool，`tool_calls` 输出正确。
+- 已用普通 Python 循环完成一次 Tool 闭环：模型选择 Tool → 程序执行 → 返回 `ToolMessage` → 模型生成结果。
+- 当前 Tool 尚未接入 LangGraph，也尚未替换 `/rag/chat` 的原有检索流程。
+
+### 当前学习结论
+
+- 只有一个固定函数时，Tool 与普通函数差别不明显。
+- 当模型需要在多个能力之间选择时，Tool 才体现价值。
+- `bind_tools()` 只提供工具描述并让模型产生 `tool_calls`，不会自动执行函数。
+- 工具执行、结果回传和最终回答需要由程序或 LangGraph 管理。
+
+### 下一步唯一任务
+
+客户需求：
+
+> 法律问答流程中，模型可以自主决定是否检索法律知识；如果需要检索，由流程自动执行 Tool 并继续回答。
+
+下一步把现有普通 Python Tool 循环迁移到 LangGraph，学习并使用 `ToolNode`、工具条件路由和工具结果回传。
+
+执行顺序：
+
+1. 先画出 `START → agent → tools → agent → END` 流程。
+2. 创建最小 `ToolNode` 图，不接入现有 `/rag/chat`。
+3. 验证法律问题会调用 `search_legal_knowledge`，普通问候不会调用 Tool。
+4. 验证 `get_document_detail` 的选择和结果回传。
+5. 独立验证通过后，再考虑接入主问答接口。
+
+当前未提交改动：`app.py`、`workflow/rag_graph_chat.py`、`services/tools.py`、`tests/`、`frontend/` 及包初始化文件。不要使用 `git add .`，继续保护用户未提交内容。

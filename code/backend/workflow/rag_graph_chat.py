@@ -8,6 +8,10 @@ from langgraph.graph import StateGraph, START, END
 from typing import Literal
 from services.llm import llm_qwen
 
+class Context(TypedDict):
+    text: str
+    document_id: int
+    chunk_index: int
 
 def run_rag_graph(question: str):
     TraceStage = Literal[
@@ -18,7 +22,7 @@ def run_rag_graph(question: str):
     class State(TypedDict, total=False):
         question: str  # 用户输入的问题
         search_query: str  # llm改写问题
-        contexts: list[str]  # 检索到的知识库内容（RAG上下文）
+        contexts: list[Context]  # 检索到的知识库内容（RAG上下文）
         is_relevant: bool  # 判断检索结果是否相关
         retry_count: int  # 当前重试次数
         answer: str  # 最终生成的回答
@@ -54,17 +58,21 @@ def run_rag_graph(question: str):
                 ]
             )
 
-            contexts = [
-                hit.get("entity", {}).get("text", "")
-                for hit in results[0]
-            ]
+            contexts = []
+
+            for hit in results[0]:
+                entity = hit.get("entity", {})
+
+                contexts.append({
+                    "text": entity.get("text", ""),
+                    "document_id": entity.get("document_id"),
+                    "chunk_index": entity.get("chunk_index")
+                })
 
             return {
                 "contexts": contexts,
                 "stage": "retrieve",
-                "trace": append_trace(
-                    state, "retrieve"
-                )
+                "trace": append_trace(state, "retrieve")
             }
 
         except Exception:
@@ -97,10 +105,12 @@ def run_rag_graph(question: str):
 
         llm = llm_qwen(0)
         chain = prompt | llm | StrOutputParser()
-
+        context_text = "\n\n".join(
+            item["text"] for item in state["contexts"]
+        )
         result = chain.invoke({
             "question": state["question"],
-            "context": "\n\n".join(contexts)
+            "context": context_text
         })
 
         return {
@@ -130,8 +140,11 @@ def run_rag_graph(question: str):
     """)
         llm = llm_qwen(0.1)
         chain = prompt | llm | StrOutputParser()
+        context_text = "\n\n".join(
+            item["text"] for item in state["contexts"]
+        )
         answer = chain.invoke({
-            'context': "\n\n".join(state["contexts"]),
+            'context': context_text,
             'question': state["question"]
         })
         return {
@@ -192,49 +205,49 @@ def run_rag_graph(question: str):
 
         return "refuse"
 
+    def builder_():
+        builder = StateGraph(State)
 
+        builder.add_node("retrieve", retrieve_node)
+        builder.add_node("grade", grade_node)
+        builder.add_node("answer", answer_node)
+        builder.add_node("refuse", refuse_node)
+        builder.add_node("rewrite", rewrite_query_node)
+        builder.add_node("error", error_node)
 
-    builder = StateGraph(State)
+        builder.add_edge(START, "retrieve")
+        builder.add_conditional_edges(
+            "retrieve",
+            route_after_retrieve,
+            {
+                "grade": "grade",
+                "error": "error"
+            }
+        )
+        builder.add_conditional_edges(
+            "grade",
+            route_after_grade,
+            {
+                "answer": "answer",
+                "rewrite": "rewrite",
+                "refuse": "refuse"
+            }
+        )
+        builder.add_edge("error", END)
+        builder.add_edge("answer", END)
+        builder.add_edge("rewrite", "retrieve")
+        builder.add_edge("refuse", END)
 
-    builder.add_node("retrieve", retrieve_node)
-    builder.add_node("grade", grade_node)
-    builder.add_node("answer", answer_node)
-    builder.add_node("refuse", refuse_node)
-    builder.add_node("rewrite", rewrite_query_node)
-    builder.add_node("error", error_node)
-
-    builder.add_edge(START, "retrieve")
-    builder.add_conditional_edges(
-        "retrieve",
-        route_after_retrieve,
-        {
-            "grade": "grade",
-            "error": "error"
+        graph = builder.compile()
+        result = graph.invoke({"question": question})
+        pprint(result)
+        return {
+            "answer": result.get("answer", ""),
+            "contexts": result.get("contexts", []),
+            "trace": result.get("trace", []),
+            "stage": result.get("stage", ""),
+            "error": result.get("error", "")
         }
-    )
-    builder.add_conditional_edges(
-        "grade",
-        route_after_grade,
-        {
-            "answer": "answer",
-            "rewrite": "rewrite",
-            "refuse": "refuse"
-        }
-    )
-    builder.add_edge("error", END)
-    builder.add_edge("answer", END)
-    builder.add_edge("rewrite", "retrieve")
-    builder.add_edge("refuse", END)
+    return builder_()
 
-    graph = builder.compile()
-    result = graph.invoke({"question": question})
-    pprint(result)
-    return {
-        "answer": result.get("answer", ""),
-        "contexts": result.get("contexts", []),
-        "trace": result.get("trace", []),
-        "stage": result.get("stage", ""),
-        "error": result.get("error", "")
-    }
-
-# langgraph_cs("林黛玉犯了什么法？")
+# run_rag_graph("林黛玉犯了什么法？")
