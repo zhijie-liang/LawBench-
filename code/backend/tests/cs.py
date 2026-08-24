@@ -8,7 +8,7 @@ from langgraph.prebuilt import ToolNode
 from langgraph.graph import StateGraph, START, END
 from pymilvus import MilvusClient
 from langchain_community.embeddings.dashscope import DashScopeEmbeddings
-
+import json
 
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
@@ -58,7 +58,7 @@ def search_legal_knowledge(query: str) -> str:
             "chunk_index": entity.get("chunk_index")
         })
 
-    return contexts[0]["text"]
+    return json.dumps(contexts, ensure_ascii=False, indent=2)
 
 
 def agent_node(state: State):
@@ -131,7 +131,12 @@ def builder_(question: str):
 
     result = graph.invoke({
         "messages": [
-            SystemMessage(content="只能根据工具返回的资料回答；资料没有提到的内容不要补充。"),
+            SystemMessage(content="""
+            只能根据 Tool 返回的 JSON 资料回答。
+            每条资料包含 text、document_id、chunk_index。
+            回答结论必须来自 text，并在相关内容后标注 document_id 和 chunk_index。
+            资料没有提到的内容不要补充。
+            """),
             HumanMessage(content=question)
         ]
     })

@@ -1,5 +1,7 @@
 
 from fastapi import FastAPI, UploadFile, File
+
+from workflow.agent import agent_graph
 from workflow.rag_chat import rag_chat
 from workflow.rag_up_milvus import rag_up_milvus
 from workflow.register import register_user
@@ -44,16 +46,33 @@ def rag(file: UploadFile = File(...)):
     return rag_up_milvus(file)
 
 # =========================================================
-# 4. RAG llm检索
+# 4. RAG llm 检索
 # =========================================================
 @app.get("/chat")
 def chat(question: str):
     return rag_chat(question)
 
 # =========================================================
-# 5. LangGraph接入
+# 5. LangGraph 接入
 # =========================================================
 @app.get("/rag/chat", response_model=ChatResponse)
 def langgraph(question: str):
     result = run_rag_graph(question)
     return result
+
+# =========================================================
+# 6. agent 接入
+# =========================================================
+@app.get("/agent")
+def agent(question: str):
+    result = agent_graph(question)
+    return result
+
+
+
+
+
+
+
+
+
