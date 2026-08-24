@@ -16,6 +16,7 @@ const navGroups = [
   { label: '智能工作', items: [
     { label: '普通问答', path: '/workspace/basic', icon: 'chat' },
     { label: '流程问答', path: '/workspace/graph', icon: 'workflow' },
+    { label: 'Agent 问答', path: '/workspace/agent', icon: 'agent' },
   ] },
   { label: '知识管理', items: [
     { label: '资料入库', path: '/workspace/upload', icon: 'upload' },

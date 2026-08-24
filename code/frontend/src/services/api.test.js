@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { chat, graphChat, login, ragUpload, register } from './api.js'
+import { agentChat, chat, graphChat, login, ragUpload, register } from './api.js'
 
 describe('新版后端接口适配', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -19,9 +19,11 @@ describe('新版后端接口适配', () => {
     await ragUpload(new File(['合同内容'], 'contract.txt', { type: 'text/plain' }))
     await chat('违约责任是什么')
     await graphChat('违约责任是什么')
+    await agentChat('违约责任是什么')
     expect(fetchMock.mock.calls[0][0]).toBe('/api/rag')
     expect(fetchMock.mock.calls[0][1].body).toBeInstanceOf(FormData)
     expect(fetchMock.mock.calls[1][0]).toContain('/api/chat?question=')
     expect(fetchMock.mock.calls[2][0]).toContain('/api/rag/chat?question=')
+    expect(fetchMock.mock.calls[3][0]).toContain('/api/agent?question=')
   })
 })

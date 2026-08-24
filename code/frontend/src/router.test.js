@@ -26,6 +26,12 @@ describe('工作台路由保护', () => {
     expect(router.currentRoute.value.matched.at(-1).components.default.__name).toBe('GraphChatView')
   })
 
+  it('Agent 问答拥有独立页面地址', async () => {
+    setAuthenticated('alice')
+    await router.push('/workspace/agent')
+    expect(router.currentRoute.value.matched.at(-1).components.default.__name).toBe('AgentChatView')
+  })
+
   it('企业扩展能力拥有独立展示页面', async () => {
     setAuthenticated('alice')
     await router.push('/workspace/capabilities')

@@ -10,6 +10,13 @@ describe('问答响应展示', () => {
     expect(normalizeChatResponse({ answer: '答案', contexts: ['依据'], trace: ['retrieve'], stage: 'generate' })).toEqual({ answer: '答案', contexts: ['依据'], trace: ['retrieve'], stage: 'generate' })
   })
 
+  it('展示 Agent 返回的阶段、上下文和错误信息', () => {
+    expect(normalizeChatResponse({ answer: '代理答案', contexts: [{ text: '依据条文', document_id: 2 }], trace: ['agent', 'tools', 'answer'], stage: 'answer', error: '' })).toMatchObject({
+      answer: '代理答案', contexts: ['依据条文'], trace: ['agent', 'tools', 'answer'], stage: 'answer',
+    })
+    expect(normalizeChatResponse({ answer: '暂时无法完成', error: '服务异常', stage: 'error' })).toMatchObject({ answer: '暂时无法完成', stage: 'error', error: '服务异常' })
+  })
+
   it('将对象和数组形式的检索信息转换为可读文本', () => {
     expect(normalizeChatResponse({
       answer: '答案',

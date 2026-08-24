@@ -25,6 +25,7 @@ export function resetWorkspaceStore() {
   const fresh = createWorkspaceState()
   workspaceState.basic = fresh.basic
   workspaceState.graph = fresh.graph
+  workspaceState.agent = fresh.agent
   workspaceState.records = fresh.records
   clearWorkspaceState()
 }

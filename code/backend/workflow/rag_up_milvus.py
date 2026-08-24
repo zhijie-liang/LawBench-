@@ -1,16 +1,10 @@
 from fastapi import UploadFile, File, HTTPException
 from pymilvus import MilvusClient
 from langchain_core.documents import Document
-from langchain_community.embeddings.dashscope import DashScopeEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from services.mysql_connect import mysql_connect
-import os
-from dotenv import load_dotenv
+from workflow.embedding import embedding_dashscope
 
-load_dotenv()
-api_key = os.getenv("DASHSCOPE_API_KEY")
-if not api_key:
-    raise ValueError("请在 .env 中配置 DASHSCOPE_API_KEY")
 
 def rag_up_milvus(file: UploadFile = File(...)):
     """RAG 入库接口：上传 TXT 文件，清洗、切块、向量化后写入 MySQL 与 Milvus。
@@ -55,7 +49,7 @@ def rag_up_milvus(file: UploadFile = File(...)):
     db.close()
     print("关闭mysql实例")
     # 6. Embedding 向量化
-    embeddings = DashScopeEmbeddings(model="text-embedding-v3", dashscope_api_key=api_key)
+    embeddings = embedding_dashscope()
     texts = [
         chunk.page_content
         for chunk in chunks

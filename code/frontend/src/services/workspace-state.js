@@ -18,7 +18,7 @@ function normalizeModeState(value) {
 }
 
 export function createWorkspaceState() {
-  return { basic: createModeState(), graph: createModeState(), records: [] }
+  return { basic: createModeState(), graph: createModeState(), agent: createModeState(), records: [] }
 }
 
 export function loadWorkspaceState() {
@@ -28,6 +28,7 @@ export function loadWorkspaceState() {
     return {
       basic: normalizeModeState(value.basic),
       graph: normalizeModeState(value.graph),
+      agent: normalizeModeState(value.agent),
       records: Array.isArray(value.records) ? value.records : [],
     }
   } catch {

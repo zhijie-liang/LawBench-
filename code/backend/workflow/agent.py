@@ -6,13 +6,12 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langgraph.prebuilt import ToolNode
 from pymilvus import MilvusClient
-from langchain_community.embeddings.dashscope import DashScopeEmbeddings
 from langgraph.graph import StateGraph, START, END
 from typing import Literal
 from langchain_core.tools import tool
 import json
 from services.llm import llm_qwen
-
+from workflow.embedding import embedding_dashscope
 
 
 class Context(TypedDict):
@@ -59,9 +58,7 @@ def agent_graph(question: str):
     def search_legal_knowledge(query: str) -> str:
         """检索法律知识库，返回相关法律资料。"""
 
-        embeddings = DashScopeEmbeddings(
-            model="text-embedding-v3"
-        )
+        embeddings = embedding_dashscope()
         query_vector = embeddings.embed_query(query)
         client = MilvusClient(
             uri="http://localhost:19530"

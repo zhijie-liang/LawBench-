@@ -3,10 +3,11 @@ from pprint import pprint
 from pymilvus import MilvusClient
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_community.embeddings.dashscope import DashScopeEmbeddings
 from langgraph.graph import StateGraph, START, END
 from typing import Literal
 from services.llm import llm_qwen
+from workflow.embedding import embedding_dashscope
+
 
 class Context(TypedDict):
     text: str
@@ -38,9 +39,7 @@ def run_rag_graph(question: str):
                     or state["question"]
             )
 
-            embeddings = DashScopeEmbeddings(
-                model="text-embedding-v3"
-            )
+            embeddings = embedding_dashscope()
             query_vector = embeddings.embed_query(query_text)
 
             client = MilvusClient(

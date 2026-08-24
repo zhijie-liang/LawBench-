@@ -1,6 +1,4 @@
-
 from fastapi import FastAPI, UploadFile, File
-
 from workflow.agent import agent_graph
 from workflow.rag_chat import rag_chat
 from workflow.rag_up_milvus import rag_up_milvus

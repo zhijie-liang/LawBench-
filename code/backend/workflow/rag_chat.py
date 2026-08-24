@@ -1,19 +1,13 @@
 from pymilvus import MilvusClient
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_community.embeddings.dashscope import DashScopeEmbeddings
 from services.llm import llm_qwen
-import os
-from dotenv import load_dotenv
+from workflow.embedding import embedding_dashscope
 
-load_dotenv()
-api_key = os.getenv("DASHSCOPE_API_KEY")
-if not api_key:
-    raise ValueError("请在 .env 中配置 DASHSCOPE_API_KEY")
 
 def rag_chat(question: str):
     # 1. 问题向量化
-    embeddings = DashScopeEmbeddings(model="text-embedding-v3", dashscope_api_key=api_key)
+    embeddings = embedding_dashscope()
     query_vector = embeddings.embed_query(question)
     # 2. Milvus检索
     client = MilvusClient(uri="http://localhost:19530")

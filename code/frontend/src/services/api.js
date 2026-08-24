@@ -28,3 +28,7 @@ export async function graphChat(question) {
   const params = new URLSearchParams({ question })
   return readResponse(await request(`/rag/chat?${params}`))
 }
+export async function agentChat(question) {
+  const params = new URLSearchParams({ question })
+  return readResponse(await request(`/agent?${params}`))
+}

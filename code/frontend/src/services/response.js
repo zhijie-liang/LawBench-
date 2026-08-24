@@ -21,6 +21,7 @@ export function normalizeChatResponse(data) {
     contexts: (Array.isArray(data?.contexts) ? data.contexts : []).map((item) => toDisplayText(item, ['page_content', 'text', 'content', 'document'])).filter(Boolean),
     trace: (Array.isArray(data?.trace) ? data.trace : []).map((item) => toDisplayText(item, ['node', 'stage', 'name', 'message'])).filter(Boolean),
     stage: toDisplayText(data?.stage, ['stage', 'name']),
+    ...(data?.error ? { error: toDisplayText(data.error, ['message', 'detail', 'error']) } : {}),
   }
 }
 
