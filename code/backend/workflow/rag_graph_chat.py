@@ -1,11 +1,11 @@
 from typing import TypedDict
 from pprint import pprint
-from pymilvus import MilvusClient
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, START, END
 from typing import Literal
 from services.llm import llm_qwen
+from services.milvus_connect import milvus_client
 from workflow.embedding import embedding_dashscope
 
 
@@ -42,20 +42,7 @@ def run_rag_graph(question: str):
             embeddings = embedding_dashscope()
             query_vector = embeddings.embed_query(query_text)
 
-            client = MilvusClient(
-                uri="http://localhost:19530"
-            )
-            results = client.search(
-                collection_name="document_chunks_v1",
-                data=[query_vector],
-                anns_field="vector",
-                limit=3,
-                output_fields=[
-                    "text",
-                    "document_id",
-                    "chunk_index"
-                ]
-            )
+            results = milvus_client(query_vector, 3)
 
             contexts = []
 

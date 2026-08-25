@@ -3,7 +3,7 @@ client = None
 
 """获取 Milvus 客户端（单例）。"""
 if client is None:
-    client = MilvusClient(uri="http://localhost:19530")
+    client = MilvusClient(uri="http://47.99.120.222:19530")
     print("Milvus连接成功")
 
 COLLECTION = "document_chunks_v1"

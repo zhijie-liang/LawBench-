@@ -1,7 +1,7 @@
-from pymilvus import MilvusClient
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from services.llm import llm_qwen
+from services.milvus_connect import milvus_client
 from workflow.embedding import embedding_dashscope
 
 
@@ -10,15 +10,7 @@ def rag_chat(question: str):
     embeddings = embedding_dashscope()
     query_vector = embeddings.embed_query(question)
     # 2. Milvus检索
-    client = MilvusClient(uri="http://localhost:19530")
-    print("Milvus连接成功")
-    results = client.search(
-        collection_name="document_chunks_v1",
-        data=[query_vector],
-        anns_field="vector",
-        limit=3,
-        output_fields=["text", "document_id", "chunk_index"]
-    )
+    results = milvus_client(query_vector, 3)
     # 3. 拼接检索结果
     context = "\n\n".join(
         hit["entity"]["text"]

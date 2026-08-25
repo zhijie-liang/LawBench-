@@ -5,12 +5,12 @@ from langgraph.graph.message import add_messages
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langgraph.prebuilt import ToolNode
-from pymilvus import MilvusClient
 from langgraph.graph import StateGraph, START, END
 from typing import Literal
 from langchain_core.tools import tool
 import json
 from services.llm import llm_qwen
+from services.milvus_connect import milvus_client
 from workflow.embedding import embedding_dashscope
 
 
@@ -60,20 +60,7 @@ def agent_graph(question: str):
 
         embeddings = embedding_dashscope()
         query_vector = embeddings.embed_query(query)
-        client = MilvusClient(
-            uri="http://localhost:19530"
-        )
-        results = client.search(
-            collection_name="document_chunks_v1",
-            data=[query_vector],
-            anns_field="vector",
-            limit=3,
-            output_fields=[
-                "text",
-                "document_id",
-                "chunk_index"
-            ]
-        )
+        results = milvus_client(query_vector, 3)
         contexts = []
 
         for hit in results[0]:

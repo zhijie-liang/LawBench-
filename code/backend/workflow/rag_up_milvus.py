@@ -2,6 +2,8 @@ from fastapi import UploadFile, File, HTTPException
 from pymilvus import MilvusClient
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+from services.milvus_connect import milvus_insert
 from services.mysql_connect import mysql_connect
 from workflow.embedding import embedding_dashscope
 
@@ -65,11 +67,5 @@ def rag_up_milvus(file: UploadFile = File(...)):
             "text": chunk.page_content,
             "vector": vectors[i]
         })
-    client = MilvusClient(uri="http://localhost:19530")
-    print("Milvus连接成功")
-    client.insert(
-        collection_name="document_chunks_v1",
-        data=data
-    )
-    print(f"Milvus入库完成，共{len(data)}条")
-    return f"Milvus入库完成，共{len(data)}条"
+    # return milvus_insert(data=data)
+    return milvus_insert(data)
