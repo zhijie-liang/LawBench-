@@ -2,7 +2,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from services.llm import llm_qwen
 from services.milvus_connect import milvus_client
-from workflow.embedding import embedding_dashscope
+from services.embedding import embedding_dashscope
 
 
 def rag_chat(question: str):

@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, START, END
 from typing import Literal
 from services.llm import llm_qwen
 from services.milvus_connect import milvus_client
-from workflow.embedding import embedding_dashscope
+from services.embedding import embedding_dashscope
 
 
 class Context(TypedDict):

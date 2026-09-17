@@ -1,11 +1,10 @@
 from fastapi import UploadFile, File, HTTPException
-from pymilvus import MilvusClient
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from services.milvus_connect import milvus_insert
 from services.mysql_connect import mysql_connect
-from workflow.embedding import embedding_dashscope
+from services.embedding import embedding_dashscope
 
 
 def rag_up_milvus(file: UploadFile = File(...)):
