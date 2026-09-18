@@ -362,9 +362,9 @@ def agent_graph(question: str):
 
 
 
-if __name__ == "__main__":
-    print("=== 测试普通问题 ===")
-    agent_graph("你好啊")
-
-    print("=== 测试法律问题 ===")
-    agent_graph("砍伐的林木销售给别人犯什么罪？")
+# if __name__ == "__main__":
+#     print("=== 测试普通问题 ===")
+#     agent_graph("你好啊")
+#
+#     print("=== 测试法律问题 ===")
+#     agent_graph("砍伐的林木销售给别人犯什么罪？")
